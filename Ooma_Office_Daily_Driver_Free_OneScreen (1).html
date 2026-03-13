@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ooma Office Daily Driver — One Screen (Free)</title>
+<style>
+  :root{
+    --bg:#0b0f14; --card:#111826; --muted:#93a4b7; --text:#e7eef8;
+    --accent:#4ea1ff; --accent2:#2dd4bf; --danger:#ff5a6a; --warn:#ffcc66;
+    --border:#1f2a3a;
+    --radius:14px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font-family:var(--sans); background:linear-gradient(180deg,#0b0f14,#070a0f 60%, #070a0f); color:var(--text);}
+  a{color:var(--accent); text-decoration:none}
+  .wrap{max-width:1200px; margin:0 auto; padding:16px;}
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:rgba(7,10,15,.92); backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--border);
+    padding:12px 0;
+  }
+  .grid{display:grid; gap:10px}
+  .fields{grid-template-columns: repeat(10, minmax(0, 1fr));}
+  .field{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:8px 10px;}
+  .field label{display:block; font-size:11px; color:var(--muted); margin-bottom:4px}
+  .field input, .field select{
+    width:100%; background:transparent; border:0; outline:0; color:var(--text);
+    font-size:13px;
+  }
+  .btnrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  button{
+    background:var(--card); border:1px solid var(--border); color:var(--text);
+    padding:9px 11px; border-radius:12px; cursor:pointer; font-weight:650;
+  }
+  button.primary{background:linear-gradient(180deg,#1f6feb,#1a5fd1); border-color:#2b73f0}
+  button.good{background:linear-gradient(180deg,#0f766e,#0b5b55); border-color:#1aa79c}
+  button.warn{background:linear-gradient(180deg,#8b5cf6,#6d28d9); border-color:#7c3aed}
+  button.ghost{background:transparent}
+  button:active{transform: translateY(1px)}
+  .toast{
+    position:fixed; right:14px; bottom:14px; z-index:50;
+    background:rgba(17,24,38,.95); border:1px solid var(--border);
+    padding:10px 12px; border-radius:12px; color:var(--text);
+    display:none; max-width:360px;
+  }
+  .navchips{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+  .chip{
+    padding:7px 10px; border-radius:999px; border:1px solid var(--border);
+    background:rgba(17,24,38,.6); color:var(--muted); cursor:pointer; font-size:12px; font-weight:650;
+  }
+  .chip:hover{border-color:#2b73f0; color:var(--text)}
+  .section{margin-top:14px}
+  .section h2{font-size:15px; margin:14px 0 10px; color:var(--text)}
+  .sub{color:var(--muted); font-size:12px; margin-top:-6px}
+  .cards{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px}
+  @media (max-width: 980px){ .fields{grid-template-columns: repeat(2, minmax(0,1fr));} .cards{grid-template-columns:1fr;} }
+  .card{
+    background:rgba(17,24,38,.72);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px;
+  }
+  .cardhead{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .title{font-weight:800; font-size:13px}
+  .badge{font-size:11px; color:var(--muted)}
+  .copybtn{padding:7px 9px; font-size:12px}
+  .copybtn.primary{background:linear-gradient(180deg,#1f6feb,#1a5fd1); border-color:#2b73f0}
+  .copybtn.small{padding:6px 8px; font-size:11px}
+  .text{
+    margin-top:10px;
+    font-family:var(--mono);
+    font-size:12px;
+    line-height:1.35;
+    white-space:pre-wrap;
+    background:rgba(11,15,20,.55);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:10px;
+  }
+  .text[contenteditable="true"]{outline: 2px solid transparent}
+  .text[contenteditable="true"]:focus{outline: 2px solid rgba(78,161,255,.35)}
+  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+  .muted{color:var(--muted); font-size:12px}
+  details{background:rgba(17,24,38,.45); border:1px solid var(--border); border-radius:14px; padding:10px}
+  summary{cursor:pointer; font-weight:800}
+  .tabs{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0}
+  .tab{padding:7px 10px; border-radius:999px; border:1px solid var(--border); cursor:pointer; color:var(--muted); font-weight:800; font-size:12px}
+  .tab.active{background:rgba(78,161,255,.18); border-color:#2b73f0; color:var(--text)}
+  .panel{display:none}
+  .panel.active{display:block}
+  .scenarioRow{display:grid; grid-template-columns: 220px 1fr; gap:10px}
+  @media (max-width: 980px){ .scenarioRow{grid-template-columns:1fr;} }
+  .scList{display:flex; flex-direction:column; gap:8px}
+  .scItem{padding:10px; border-radius:12px; border:1px solid var(--border); background:rgba(17,24,38,.55); cursor:pointer; color:var(--muted); font-weight:800; font-size:12px}
+  .scItem.active{border-color:#2b73f0; color:var(--text); background:rgba(78,161,255,.12)}
+  .variants{display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px}
+  @media (max-width: 980px){ .variants{grid-template-columns:1fr;} }
+  .kbnote{font-size:12px; color:var(--muted); margin-top:8px}
+  .footer{margin:18px 0 8px; color:var(--muted); font-size:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap">
+    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+      <div>
+        <div style="font-size:16px; font-weight:900;">Ooma Office Daily Driver — One Screen (Free)</div>
+        <div class="sub">Glance → speak → copy → paste. Verified-KB only (brochure). Unverified items stay placeholders.</div>
+      </div>
+      <div class="muted" style="max-width:520px;">
+        Built on proven B2B call patterns (tight agenda, triage, impact, two-choice next step). No “magic data,” just repeatable fundamentals.
+      </div>
+    </div>
+
+    <div class="grid fields" id="fields"></div>
+
+    <div class="btnrow">
+      <button class="primary" id="copyAllSheet">Copy All One-Sheet</button>
+      <button class="good" id="copyAllFollowups">Copy All Follow-ups</button>
+      <button class="warn" id="toggleNotes">Quick Notes</button>
+      <button class="ghost" id="resetAll">Reset</button>
+    </div>
+
+    <div class="navchips" id="nav"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="notesBox" class="section" style="display:none;">
+    <div class="card">
+      <div class="cardhead">
+        <div class="title">Quick Notes (saved locally)</div>
+        <button class="copybtn small" id="copyNotes">Copy Notes</button>
+      </div>
+      <div class="text" id="notes" contenteditable="true" spellcheck="false"></div>
+      <div class="kbnote">Tip: Paste these into your CRM after the call. Keep it short: pain, users, provider, decision, next step time.</div>
+    </div>
+  </div>
+
+  <div id="main"></div>
+
+  <details class="section" id="kbSection">
+    <summary>Verified KB (Brochure) — view/copy</summary>
+    <div class="kbnote">Copilot/generator must only use these claims. Anything else stays a placeholder.</div>
+    <div class="row">
+      <button class="copybtn primary" id="copyKB">Copy KB JSON</button>
+    </div>
+    <div class="text" id="kbText"></div>
+  </details>
+
+  <div class="footer">
+    Free/offline. No API required. If you later add an API, keep the KB as your strict whitelist.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const VERIFIED_KB = {
+  source: "OomaOfficeBrochure.pdf",
+  positioning: [
+    "Leading cloud-based phone service that helps you run your business from anywhere, manage it more efficiently and serve your customers better.",
+    "Ooma Office has over 50 features designed to help today’s small to midsize businesses get ahead."
+  ],
+  plans: {
+    essentials: {
+      price_per_user_month: "19.95*",
+      includes: [
+        "Call Forwarding", "Do Not Disturb", "Caller ID", "Speed Dial", "Voicemail",
+        "Virtual Receptionist",
+        "Ring Groups (calls ring either simultaneously or in order until someone answers)",
+        "Mobile App",
+        "Music on Hold",
+        "One Free Toll-free Number (500 inbound minutes/month; unlimited calling in US/Canada/Mexico/Puerto Rico; low international rates available)",
+        "Virtual Fax"
+      ]
+    },
+    pro: {
+      price_per_user_month: "24.95*",
+      adds: [
+        "Desktop App",
+        "Caller Info Match (retrieve contact info from CRM systems, social media and search engines)",
+        "Videoconferencing up to 25 participants",
+        "Dynamic Caller ID",
+        "Call Recording",
+        "Expanded Extension Monitoring up to 60",
+        "Enhanced Call Blocking (block more than two million robocallers)",
+        "Expanded Call Park",
+        "Voicemail Transcription (voicemails converted to text sent to email)",
+        "Audio conference up to 25",
+        "Call Analytics",
+        "Advanced Ring Groups"
+      ]
+    },
+    pro_plus: {
+      price_per_user_month: "29.95*",
+      adds: [
+        "Call Queuing",
+        "Find Me Follow Me",
+        "CRM Integration",
+        "Hot Desking",
+        "Shift-to-Text",
+        "Videoconferencing up to 100"
+      ]
+    }
+  },
+  pricing_disclaimer: "*Applicable taxes and fees are not included.",
+  unverified_placeholders: [
+    "#1 for 12 years straight",
+    "free number porting",
+    "flat pricing"
+  ]
+};
+
+document.getElementById('kbText').textContent = JSON.stringify(VERIFIED_KB, null, 2);
+
+const FIELD_DEFS = [
+  {key:'name', label:'Name', ph:'John'},
+  {key:'company', label:'Company', ph:'ABC Plumbing'},
+  {key:'users', label:'Users', ph:'3'},
+  {key:'provider', label:'Provider', ph:'Vonage / Landline'},
+  {key:'pain', label:'Pain', type:'select', options:['Cost','Missed Calls','Routing','Quality'], ph:'Cost'},
+  {key:'timeA', label:'Time A', ph:'2:00 PM'},
+  {key:'timeB', label:'Time B', ph:'4:00 PM'},
+  {key:'phone', label:'Your Phone', ph:'(xxx) xxx-xxxx'},
+  {key:'daydate', label:'Day/Date', ph:'Tue 3/19'}
+];
+
+const LS_KEY = 'ooma_daily_driver_v1';
+const state = loadState();
+
+renderFields();
+function renderFields(){
+  const el = document.getElementById('fields');
+  el.innerHTML = '';
+  FIELD_DEFS.forEach(def=>{
+    const d = document.createElement('div');
+    d.className='field';
+    const id = 'f_'+def.key;
+    d.innerHTML = `<label for="${id}">${def.label}</label>`;
+    let input;
+    if(def.type==='select'){
+      input = document.createElement('select');
+      def.options.forEach(o=>{
+        const opt=document.createElement('option');
+        opt.value=o; opt.textContent=o;
+        input.appendChild(opt);
+      });
+      input.value = state.fields[def.key] ?? def.options[0];
+    } else {
+      input = document.createElement('input');
+      input.type='text';
+      input.placeholder = def.ph || '';
+      input.value = state.fields[def.key] ?? '';
+    }
+    input.id=id;
+    input.addEventListener('input', ()=>{
+      state.fields[def.key]=input.value;
+      saveState();
+      rerenderAll();
+    });
+    d.appendChild(input);
+    el.appendChild(d);
+  });
+}
+
+function getVars(){
+  const f = state.fields;
+  return {
+    Name: f.name||'[Name]',
+    Company: f.company||'[Company]',
+    USERS: f.users||'[USERS]',
+    PROVIDER: f.provider||'[PROVIDER]',
+    PAIN: f.pain||'[PAIN]',
+    TimeA: f.timeA||'[Time A]',
+    TimeB: f.timeB||'[Time B]',
+    Phone: f.phone||'[Phone]',
+    DayDate: f.daydate||'[Day/Date]'
+  };
+}
+function applyVars(t){
+  const v = getVars();
+  return t
+    .replaceAll('[Name]', v.Name)
+    .replaceAll('[Company]', v.Company)
+    .replaceAll('[USERS]', v.USERS)
+    .replaceAll('[PROVIDER]', v.PROVIDER)
+    .replaceAll('[PAIN]', v.PAIN)
+    .replaceAll('[Time A]', v.TimeA)
+    .replaceAll('[Time B]', v.TimeB)
+    .replaceAll('[Phone]', v.Phone)
+    .replaceAll('[Day/Date]', v.DayDate);
+}
+
+const SHEET = [
+  section('Openers', 'Recorded line + warm/outbound/aged. Pick one and go.', [
+    cardBlock('Recorded-line opener (2)', [
+      line('Option 1', 'Hi [Name] — this is Richard calling from Cloudstaff for Ooma on a recorded line.'),
+      line('Option 2', 'Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Quick question and I’ll be out of your hair.'),
+    ]),
+    cardBlock('Permission + frame (2)', [
+      line('Frame 1', 'I’ll ask 3 quick questions. If it’s not a fit, I’ll tell you and I’ll disappear. Fair?'),
+      line('Frame 2', 'Two outcomes: either we fix [PAIN], or we close it out and I stop reaching out. Cool?'),
+    ]),
+    cardTri('Lead-type openers (2 each)',
+      [
+        {k:'Warm', v:'Saw your request for business phone info. What pushed you to look—cost, missed calls, routing, or quality?'},
+        {k:'Warm', v:'Before I send anything generic—are you replacing something current, or setting up fresh?'},
+        {k:'Outbound', v:'Real quick—are your phones fully handled, or are you still dealing with cost/missed calls/routing?'},
+        {k:'Outbound', v:'If I asked your team “what’s annoying about phones,” what would they say first?'},
+        {k:'Aged', v:'You looked into phones earlier—did you fix it, or is it still unresolved?'},
+        {k:'Aged', v:'Quick check before I close this out—still open to revisiting phones this month?'}
+      ]
+    )
+  ]),
+
+  section('Discovery', 'Short, controlled, and built to isolate the buying reason fast.', [
+    cardBlock('3-question triage (mandatory)', [
+      line('Q1', 'Who are you using today—[PROVIDER] or something else?'),
+      line('Q2', 'Roughly how many users need a line/extension?'),
+      line('Q3', 'Which is costing you the most headaches: bill, missed calls, routing, or quality?'),
+    ]),
+    cardBlock('Impact (pick 1–2)', [
+      line('Missed calls', 'When a call gets missed, what does that cost you—lost jobs, callbacks, or time?'),
+      line('Routing', 'Where do calls get lost most—after hours, transfers, or ring-no-answer?'),
+      line('Cost', 'Does the bill feel high because of per-user costs, add-ons, or just the base plan?'),
+      line('Quality', 'Is quality bad all the time, or only certain times/devices?'),
+    ]),
+    cardBlock('Decision + timing', [
+      line('Decision', 'Besides you, who else needs to be comfortable before anything changes?'),
+      line('Timing', 'Is this a “fix now” problem, or “plan it for later”?'),
+    ]),
+    cardBlock('Mirror (1 line)', [
+      line('Mirror', 'Got it — [USERS] users, on [PROVIDER], main issue is [PAIN]. If we fix that cleanly, you’d be open to a change. Fair?')
+    ])
+  ]),
+
+  section('Pitch', 'Outcome first, then features (KB-only).', [
+    cardBlock('15s pitch', [
+      line('15s', 'Ooma Office is a cloud-based business phone service. Base includes Virtual Receptionist, Ring Groups, Mobile App, Music on Hold, and Virtual Fax.')
+    ]),
+    cardBlock('30s pitch', [
+      line('30s', 'If your issue is missed calls or routing, Virtual Receptionist + Ring Groups are the core. If people move around, the Mobile App helps. Then higher tiers add things like Call Recording, Voicemail Transcription, and Call Analytics depending on what you need.')
+    ]),
+    cardBlock('60s pitch', [
+      line('60s', 'Essentials covers the core call handling plus a toll-free number with included inbound minutes (see brochure details) and Virtual Fax. Pro adds Desktop App, videoconferencing up to 25, Call Recording, Voicemail Transcription to email, Call Analytics and more. Pro Plus adds Call Queuing, Find Me Follow Me, CRM Integration, and video up to 100. We match the tier to the problem so you’re not paying for junk.')
+    ]),
+    cardBlock('Pricing (use only if asked / cost pain)', [
+      line('Pricing', 'From the brochure: Essentials $19.95*, Pro $24.95*, Pro Plus $29.95* per user/month. ' + VERIFIED_KB.pricing_disclaimer),
+      line('Control Q', 'Before I quote, do you need recording/analytics/transcription, or is it mainly routing/missed calls?')
+    ]),
+  ]),
+
+  section('Close', 'Create a decision: start now or lock a time.', [
+    cardBlock('Close (direct / soft / two-time)', [
+      line('Direct', 'Based on what you told me, this is a fit. Do you want to start setup today, or lock a firm time to finalize?'),
+      line('Soft', 'If we match the right tier and call flow, are you comfortable moving forward today?'),
+      line('Two-time', 'I can do [Time A] or [Time B] — which one do you want to lock?')
+    ]),
+    cardBlock('Stall breaker (use once)', [
+      line('Isolate', 'Totally fair—what’s the one thing you still need to see to decide: pricing, timing, or call flow?')
+    ]),
+  ]),
+
+  section('Objections', 'Tight replies: acknowledge → isolate → two-choice next step.', [
+    objectionCard('Not interested',
+      'Totally fair.',
+      'Is that because phones are handled, or timing’s bad?',
+      'If it’s handled, I’ll close it out. If not, we can fix [PAIN] quickly.',
+      'Proof: Ooma Office includes Virtual Receptionist + Ring Groups for routing/missed calls (KB).',
+      'Want a quick fit check at [Time A] or [Time B]?'
+    ),
+    objectionCard('Already have a service',
+      'Got it—most do.',
+      'Are you fully set, or still dealing with [PAIN]?',
+      'If it’s still a problem, it’s worth comparing. If not, I’ll close it.',
+      'Proof: Virtual Receptionist routes calls; Ring Groups ring until someone answers (KB).',
+      '[Time A] or [Time B] for 10 minutes?'
+    ),
+    objectionCard('In a contract',
+      'Understood.',
+      'When does it end, and is timing the only blocker?',
+      'Then we plan the cleanest window so you’re not rushed later.',
+      'Proof: [CONFIRM CONTRACT TERMS].',
+      'Want to lock a quick planning call—[Time A] or [Time B]?'
+    ),
+    objectionCard('Busy',
+      'No problem.',
+      'Later today or tomorrow better?',
+      'I’ll keep it to 10 minutes: users, provider, pain, next step.',
+      'Proof: N/A.',
+      'Pick one—[Time A] or [Time B]?'
+    ),
+    objectionCard('Send a quote',
+      'Happy to.',
+      'Quick so it’s accurate—users, current provider, and must-haves (recording/analytics/transcription)?',
+      'A quote without 3 details is guesswork. I won’t do that to you.',
+      'Proof: Brochure pricing tiers exist; exact fit depends on needs (KB).',
+      'I’ll send it and we’ll do a 10-min review—[Time A] or [Time B]?'
+    )
+  ]),
+
+  section('Quote control', 'Regain control, then lock a review time.', [
+    cardBlock('2-line quote play', [
+      line('Line 1', 'Happy to send a quote.'),
+      line('Line 2', 'I just need 3 details so it’s not guesswork: users, provider, and the main issue.')
+    ]),
+    cardBlock('Minimum info (copy/paste)', [
+      line('Checklist', '- Users/lines: [USERS]\n- Current provider: [PROVIDER]\n- Main issue: [PAIN]\n- Must-haves: [CONFIRM FEATURE]\n- Decision maker(s): [CONFIRM DECISION]\n- Timing: [CONFIRM TIMING]\n- Numbers/porting: [CONFIRM PORTING]\n')
+    ]),
+    cardBlock('3-touch cadence', [
+      line('Touch 1 (same day)', 'Sent it—what stood out: fit or not fit?'),
+      line('Touch 2 (next day)', 'Is timing the issue, or did the setup not match what you need?'),
+      line('Touch 3 (close loop)', 'Should I close this out for now, or keep it open?')
+    ])
+  ]),
+
+  section('Follow-ups', 'Use the toolbox below. Built for one-click copy.', [
+    followupsBlock()
+  ])
+];
+
+const SCENARIOS = [
+  {id:'warm_no_answer', label:'Warm — no answer'},
+  {id:'outbound_no_answer', label:'Outbound — no answer'},
+  {id:'aged_reactivation', label:'Aged — reactivation'},
+  {id:'busy_confirm', label:'Busy — confirm callback'},
+  {id:'send_quote', label:'Send quote (regain control)'},
+  {id:'quote_followup', label:'Quote follow-up'},
+  {id:'callback_confirm', label:'Callback confirmation'},
+  {id:'already_have', label:'Already have service'},
+  {id:'in_contract', label:'In contract'},
+  {id:'close_loop', label:'Close-the-loop'}
+];
+const VARIANTS = ['Soft','Direct','Value','Close-now','Close-loop'];
+
+function smsText(scenarioId, variant){
+  const v = variant;
+  const base = {
+    warm_no_answer: {
+      Soft: "Hi [Name] — Richard (Cloudstaff for Ooma, recorded line). You requested phone info. Is it mainly cost, missed calls, routing, or quality?",
+      Direct: "[Name], quick 10-min fit check today? [Time A] or [Time B].",
+      Value: "If routing/missed calls are the issue, Ooma includes Virtual Receptionist + Ring Groups. Want a quick fit check?",
+      "Close-now": "If it’s a fit, are you open to moving forward today? [Time A] or [Time B].",
+      "Close-loop": "Should I close this out for now, or do you still want to fix phones this month?"
+    },
+    outbound_no_answer: {
+      Soft: "Hi [Name] — Richard (Cloudstaff for Ooma, recorded line). Are phones fully handled, or still issues with cost/missed calls/routing?",
+      Direct: "Worth a quick 10-min check? [Time A] or [Time B].",
+      Value: "Ooma includes Virtual Receptionist (routes callers) + Ring Groups (ring until answered). Worth comparing?",
+      "Close-now": "If we can confirm fit quickly, are you open to the next step today?",
+      "Close-loop": "Want me to close this out, or keep it open for a quick comparison?"
+    },
+    aged_reactivation: {
+      Soft: "Hi [Name] — Richard (Cloudstaff for Ooma, recorded line). Did you end up fixing phones, or is it still unresolved?",
+      Direct: "Still open to revisiting this, or should I close the file?",
+      Value: "If missed calls/routing are still annoying, Virtual Receptionist + Ring Groups may help. Want to revisit?",
+      "Close-now": "If it’s still open, are you open to deciding this week? [Time A] or [Time B].",
+      "Close-loop": "Reply OPEN to revisit or CLOSE and I’ll stop reaching out."
+    },
+    busy_confirm: {
+      Soft: "No worries. Later today or tomorrow better?",
+      Direct: "I’ll keep it to 10 minutes—[Time A] or [Time B]?",
+      Value: "I just need users + provider + pain to tell if it’s worth it. [Time A] or [Time B]?",
+      "Close-now": "If it checks out, are you open to moving forward on that call?",
+      "Close-loop": "What time window tomorrow should I hit you?"
+    },
+    send_quote: {
+      Soft: "Happy to. Quick so it’s accurate: users, current provider, and main issue (cost/missed/routing/quality)?",
+      Direct: "I can send it—need users + provider + must-haves so it’s not wrong.",
+      Value: "Before I quote, do you need Call Recording/Analytics/Voicemail Transcription, or mainly routing/missed calls?",
+      "Close-now": "I’ll send it—let’s lock a 10-min review: [Time A] or [Time B]?",
+      "Close-loop": "Send quote + quick review, or close it out?"
+    },
+    quote_followup: {
+      Soft: "Quick check—did the quote look relevant, or did timing change?",
+      Direct: "Is this a yes/no, or do you need one detail to decide?",
+      Value: "If routing/missed calls are still the issue, want to map call flow quickly and finalize?",
+      "Close-now": "If we adjust the setup to fit, are you open to moving forward today?",
+      "Close-loop": "Should I close this out for now, or keep it open?"
+    },
+    callback_confirm: {
+      Soft: "Confirming our call [Day/Date]. Still good?",
+      Direct: "I’ll call [Day/Date] to finalize next steps. Reply YES to confirm.",
+      Value: "On the call we’ll confirm users + call flow and lock next step. Still good for [Day/Date]?",
+      "Close-now": "If it checks out, are you open to moving forward on that call?",
+      "Close-loop": "Need to move it? [Time A] or [Time B] works better?"
+    },
+    already_have: {
+      Soft: "Got it—are you fully set now, or still issues with cost/missed calls/routing/quality?",
+      Direct: "If it’s fully handled I’ll close out. If not, quick fit check: [Time A] or [Time B]?",
+      Value: "If routing/missed calls are the issue, Virtual Receptionist + Ring Groups are built for that. Worth a look?",
+      "Close-now": "If we fix the main issue cleanly, are you open to switching?",
+      "Close-loop": "Reply handled if solved, or open if you want to revisit."
+    },
+    in_contract: {
+      Soft: "When does it end? I can help map the cleanest window.",
+      Direct: "If timing’s the only blocker, let’s plan the switch window—[Time A] or [Time B]?",
+      Value: "We can map tier + call flow now so you’re not rushed later. Open to a quick plan call?",
+      "Close-now": "If we plan it properly, are you open to moving when the window hits?",
+      "Close-loop": "Want me to close this out until renewal month, or keep it open?"
+    },
+    close_loop: {
+      Soft: "Quick check—should I close this out for now?",
+      Direct: "Reply OPEN or CLOSE.",
+      Value: "If cost/routing/missed calls are still annoying, we can map a quick fix. Open to a quick check?",
+      "Close-now": "If it’s still open, 10 minutes tomorrow—[Time A] or [Time B]?",
+      "Close-loop": "All good—close it out, or keep it open?"
+    }
+  };
+  return base[scenarioId]?.[v] || "[CONFIRM TEMPLATE]";
+}
+
+function vmText(scenarioId, variant){
+  const v = variant;
+  const base = {
+    warm_no_answer: {
+      Soft: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. You requested phone info. If you want a quick fit check, call me at [Phone].",
+      Direct: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Call me at [Phone] and we’ll confirm fit in 10 minutes.",
+      Value: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. For routing/missed calls, Virtual Receptionist + Ring Groups can help. Call me at [Phone].",
+      "Close-now": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If you want to move this forward, call me at [Phone].",
+      "Close-loop": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If phones are handled I’ll close it out—if not, call me at [Phone]."
+    },
+    outbound_no_answer: {
+      Soft: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Quick question about your business phones—call me at [Phone].",
+      Direct: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If a quick comparison is worth it, call me at [Phone].",
+      Value: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If routing/missed calls are an issue, call me at [Phone].",
+      "Close-now": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Call me at [Phone] and we can decide next steps.",
+      "Close-loop": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If not relevant, no worries—otherwise call me at [Phone]."
+    },
+    aged_reactivation: {
+      Soft: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Did you end up fixing phones, or is it still open? Call me at [Phone].",
+      Direct: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If you want to revisit this, call me at [Phone].",
+      Value: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If routing/missed calls are still the issue, call me at [Phone].",
+      "Close-now": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Call me at [Phone] and we’ll lock next steps.",
+      "Close-loop": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If handled, I’ll close it out. If not, call me at [Phone]."
+    },
+    busy_confirm: {
+      Soft: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. I can call back—what time works? Or call me at [Phone].",
+      Direct: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Call me at [Phone] or text a better time.",
+      Value: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Quick 10-minute fit check—call me at [Phone].",
+      "Close-now": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Call me at [Phone] and we’ll knock it out.",
+      "Close-loop": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If now isn’t ideal, call me at [Phone] when you can."
+    },
+    send_quote: {
+      Soft: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Happy to send a quote—call me at [Phone] so I can confirm a few details.",
+      Direct: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Call me at [Phone]—I need 3 details to quote accurately.",
+      Value: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Tier depends on needs like recording/analytics—call me at [Phone].",
+      "Close-now": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Call me at [Phone] and we’ll finalize the right setup.",
+      "Close-loop": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If you still want the quote, call me at [Phone]."
+    },
+    quote_followup: {
+      Soft: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Quick check on the quote—call me at [Phone].",
+      Direct: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Call me at [Phone] and we’ll decide next steps.",
+      Value: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If routing/missed calls are still a problem, call me at [Phone].",
+      "Close-now": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Call me at [Phone] if you’re ready to move forward.",
+      "Close-loop": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If not relevant anymore, no worries."
+    },
+    callback_confirm: {
+      Soft: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Confirming our call [Day/Date]. Call me at [Phone] if you need to move it.",
+      Direct: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. I’ll call [Day/Date]. Call me at [Phone] if anything changes.",
+      Value: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. We’ll confirm users + call flow on [Day/Date].",
+      "Close-now": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If we confirm fit, we can move forward on that call.",
+      "Close-loop": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If you need to reschedule, call me at [Phone]."
+    },
+    already_have: {
+      Soft: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. Quick question about your phones—call me at [Phone].",
+      Direct: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If phones aren’t fully handled, call me at [Phone].",
+      Value: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If routing/missed calls are the issue, call me at [Phone].",
+      "Close-now": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Call me at [Phone] and we’ll see if switching makes sense.",
+      "Close-loop": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If handled, I’ll close it out."
+    },
+    in_contract: {
+      Soft: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If you’re in a contract, we can plan the window—call me at [Phone].",
+      Direct: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Call me at [Phone] and we’ll map the timing.",
+      Value: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. We can map tier + call flow now so you’re not rushed later.",
+      "Close-now": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Call me at [Phone] if you want to plan next steps.",
+      "Close-loop": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If you want me to close it out until renewal, just reply."
+    },
+    close_loop: {
+      Soft: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. Should I close this out for now? Call me at [Phone].",
+      Direct: "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If you want to keep it open, call me at [Phone].",
+      Value: "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If cost/routing/missed calls are still an issue, call me at [Phone].",
+      "Close-now": "Hi [Name], Richard with Cloudstaff for Ooma on a recorded line. If you’re ready to decide, call me at [Phone].",
+      "Close-loop": "Hi [Name], Richard calling from Cloudstaff for Ooma on a recorded line. If handled, I’ll close it out."
+    }
+  };
+  return base[scenarioId]?.[v] || "[CONFIRM TEMPLATE]";
+}
+
+function emailTemplate(scenarioId, variant){
+  const v = variant;
+  const base = {
+    warm_no_answer: {
+      Soft: { subject:"Quick next step on your phones",
+`body`:
+`Hi [Name] — Richard calling from Cloudstaff for Ooma on a recorded line.
+
+You requested business phone info.
+What’s the main issue: cost, missed calls, routing, or quality?
+
+If it’s relevant, we can do a quick 10-minute fit check.
+[Time A] or [Time B]?
+
+Richard
+[Phone]`},
+      Direct:{ subject:"Can we knock this out today?",
+`body`:
+`Hi [Name] — Richard (Cloudstaff for Ooma, recorded line).
+
+If you’re still looking, I can confirm fit + next step in 10 minutes.
+[Time A] or [Time B] today?
+
+Richard
+[Phone]`},
+      Value:{ subject:"Cleaner routing / fewer missed calls (quick check)",
+`body`:
+`Hi [Name] — Richard calling from Cloudstaff for Ooma on a recorded line.
+
+If routing/missed calls are the headache, Ooma Office includes:
+- Virtual Receptionist (routes callers)
+- Ring Groups (ring until someone answers)
+
+Want a quick fit check?
+[Time A] or [Time B]?
+
+Richard
+[Phone]`},
+      "Close-now":{ subject:"If it fits, are you open to moving forward?",
+`body`:
+`Hi [Name] — Richard (Cloudstaff for Ooma, recorded line).
+
+If we match the right tier and call flow, are you open to moving forward today?
+If yes, I can do [Time A] or [Time B].
+
+Richard
+[Phone]`},
+      "Close-loop":{ subject:"Should I close this out?",
+`body`:
+`Hi [Name] — Richard calling from Cloudstaff for Ooma on a recorded line.
+
+Should I close this out for now, or keep it open?
+If open, reply with your best time tomorrow.
+
+Richard
+[Phone]`}
+    }
+  };
+  // To keep file size manageable, reuse warm_no_answer templates for other scenarios in this free version.
+  // You can edit any variant in-app; all edits persist locally.
+  const fall = base.warm_no_answer[v] || {subject:"[CONFIRM SUBJECT]", body:"[CONFIRM BODY]"};
+  // Provide scenario-aware defaults by swapping the first line
+  const scenarioLabel = SCENARIOS.find(s=>s.id===scenarioId)?.label || scenarioId;
+  const subj = (base[scenarioId]?.[v]?.subject) || fall.subject.replace('phones', 'phones');
+  const body = (base[scenarioId]?.[v]?.body) || fall.body.replace('You requested business phone info.', `Context: ${scenarioLabel}.`);
+  return {subject: subj, body};
+}
+
+function followupsBlock(){
+  return { id:'followups_tool', type:'followups', title:'Quick Follow-ups (SMS / Email / Voicemail)', badge:'Pick scenario → pick variant → copy. Emails split subject/body.' };
+}
+
+const mainEl = document.getElementById('main');
+
+function rerenderAll(){
+  renderNav();
+  mainEl.innerHTML='';
+  SHEET.forEach(sec=>{
+    const secEl = document.createElement('div');
+    secEl.className='section';
+    secEl.id = sec.id;
+    secEl.innerHTML = `<h2>${sec.title}</h2><div class="sub">${sec.subtitle||''}</div>`;
+    const cardsWrap = document.createElement('div');
+    cardsWrap.className='cards';
+    sec.cards.forEach(c=> cardsWrap.appendChild(renderCard(c)));
+    secEl.appendChild(cardsWrap);
+    mainEl.appendChild(secEl);
+  });
+}
+rerenderAll();
+
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML='';
+  const items = [
+    {t:'Openers', id:'openers'},
+    {t:'Discovery', id:'discovery'},
+    {t:'Pitch', id:'pitch'},
+    {t:'Close', id:'close'},
+    {t:'Objections', id:'objections'},
+    {t:'Quote', id:'quote-control'},
+    {t:'Follow-ups', id:'follow-ups'},
+    {t:'KB', id:'kbSection'}
+  ];
+  items.forEach(it=>{
+    const c = document.createElement('div');
+    c.className='chip';
+    c.textContent = it.t;
+    c.onclick = ()=> document.getElementById(it.id)?.scrollIntoView({behavior:'smooth', block:'start'});
+    nav.appendChild(c);
+  });
+}
+
+function renderCard(c){
+  const card = document.createElement('div');
+  card.className='card';
+  const head = document.createElement('div');
+  head.className='cardhead';
+  head.innerHTML = `<div><div class="title">${c.title}</div><div class="badge">${c.badge||''}</div></div>`;
+  const btn = document.createElement('button');
+  btn.className='copybtn primary';
+  btn.textContent='Copy';
+  btn.onclick=()=> copyText(getCardPlainText(c), 'Copied');
+  head.appendChild(btn);
+  card.appendChild(head);
+
+  if(c.type==='tri'){
+    const block = document.createElement('div');
+    block.className='text';
+    block.contentEditable = 'true';
+    block.spellcheck = false;
+    const baseText = applyVars(c.lines.map(x=>`${x.k}: ${x.v}`).join('\\n'));
+    block.textContent = state.customEdits[c.editKey] || baseText;
+    block.addEventListener('blur', ()=>{ state.customEdits[c.editKey]=block.textContent; saveState(); });
+    card.appendChild(block);
+    return card;
+  }
+
+  if(c.type==='followups'){
+    card.appendChild(renderFollowupsUI());
+    return card;
+  }
+
+  const body = document.createElement('div');
+  body.className='text';
+  body.contentEditable = 'true';
+  body.spellcheck = false;
+  const baseText = applyVars((c.lines||[]).map(l=>`${l.k}: ${l.v}`).join('\\n'));
+  body.textContent = state.customEdits[c.editKey] || baseText;
+  body.addEventListener('blur', ()=>{ state.customEdits[c.editKey]=body.textContent; saveState(); });
+
+  card.appendChild(body);
+  return card;
+}
+
+function getCardPlainText(c){
+  if(c.type==='followups') return buildAllFollowupsText();
+  return state.customEdits[c.editKey] || applyVars((c.lines||[]).map(l=> `${l.k}: ${l.v}`).join('\\n'));
+}
+
+function renderFollowupsUI(){
+  const wrap = document.createElement('div');
+
+  const tabs = document.createElement('div'); tabs.className='tabs';
+  const panels = { sms: document.createElement('div'), email: document.createElement('div'), vm: document.createElement('div') };
+  Object.values(panels).forEach(p=> p.className='panel');
+
+  const tabDefs = [{id:'sms',label:'SMS'},{id:'email',label:'EMAIL'},{id:'vm',label:'VOICEMAIL'}];
+  let activeTab = state.followupsTab || 'sms';
+  tabDefs.forEach(t=>{
+    const b=document.createElement('div');
+    b.className='tab'+(activeTab===t.id?' active':'');
+    b.textContent=t.label;
+    b.onclick=()=>{ activeTab=t.id; state.followupsTab=activeTab; saveState(); refreshPanels(); };
+    tabs.appendChild(b);
+  });
+  wrap.appendChild(tabs);
+
+  let activeScenario = state.followupsScenario || SCENARIOS[0].id;
+
+  function buildScenarioRow(kind){
+    const row=document.createElement('div'); row.className='scenarioRow';
+    const left=document.createElement('div'); left.className='scList';
+    SCENARIOS.forEach(sc=>{
+      const item=document.createElement('div');
+      item.className='scItem'+(activeScenario===sc.id?' active':'');
+      item.textContent=sc.label;
+      item.onclick=()=>{ activeScenario=sc.id; state.followupsScenario=activeScenario; saveState(); refreshPanels(); };
+      left.appendChild(item);
+    });
+    const right=document.createElement('div'); right.className='variants';
+
+    VARIANTS.forEach(v=>{
+      const c=document.createElement('div'); c.className='card';
+      const h=document.createElement('div'); h.className='cardhead';
+      h.innerHTML=`<div><div class="title">${v}</div><div class="badge">${SCENARIOS.find(s=>s.id===activeScenario)?.label}</div></div>`;
+
+      if(kind==='email'){
+        const rowBtns=document.createElement('div'); rowBtns.className='row';
+        const t=emailTemplate(activeScenario, v);
+        const subj = state.followupEdits[`email:${activeScenario}:${v}:subject`] || applyVars(t.subject);
+        const body = state.followupEdits[`email:${activeScenario}:${v}:body`] || applyVars(t.body);
+
+        const btnFull=document.createElement('button'); btnFull.className='copybtn primary'; btnFull.textContent='Copy Full';
+        btnFull.onclick=()=> copyText(`Subject: ${subj}\\n\\n${body}`, 'Copied full email');
+        const btnS=document.createElement('button'); btnS.className='copybtn'; btnS.textContent='Copy Subject';
+        btnS.onclick=()=> copyText(subj,'Copied subject');
+        const btnB=document.createElement('button'); btnB.className='copybtn'; btnB.textContent='Copy Body';
+        btnB.onclick=()=> copyText(body,'Copied body');
+
+        rowBtns.appendChild(btnFull); rowBtns.appendChild(btnS); rowBtns.appendChild(btnB);
+        h.appendChild(rowBtns); c.appendChild(h);
+
+        const m1=document.createElement('div'); m1.className='muted'; m1.textContent='Subject'; c.appendChild(m1);
+        const sb=document.createElement('div'); sb.className='text'; sb.contentEditable='true'; sb.spellcheck=false; sb.textContent=subj;
+        sb.addEventListener('blur', ()=>{ state.followupEdits[`email:${activeScenario}:${v}:subject`]=sb.textContent; saveState(); });
+        c.appendChild(sb);
+
+        const m2=document.createElement('div'); m2.className='muted'; m2.textContent='Body'; c.appendChild(m2);
+        const bb=document.createElement('div'); bb.className='text'; bb.contentEditable='true'; bb.spellcheck=false; bb.textContent=body;
+        bb.addEventListener('blur', ()=>{ state.followupEdits[`email:${activeScenario}:${v}:body`]=bb.textContent; saveState(); });
+        c.appendChild(bb);
+
+        right.appendChild(c);
+        return;
+      }
+
+      const copy=document.createElement('button'); copy.className='copybtn primary'; copy.textContent='Copy';
+      copy.onclick=()=>{
+        const key = `${kind}:${activeScenario}:${v}`;
+        const base = kind==='sms' ? smsText(activeScenario,v) : vmText(activeScenario,v);
+        const txt = state.followupEdits[key] || applyVars(base);
+        copyText(txt,'Copied');
+      };
+      h.appendChild(copy);
+      c.appendChild(h);
+
+      const box=document.createElement('div'); box.className='text'; box.contentEditable='true'; box.spellcheck=false;
+      const key = `${kind}:${activeScenario}:${v}`;
+      const base = kind==='sms' ? smsText(activeScenario,v) : vmText(activeScenario,v);
+      box.textContent = state.followupEdits[key] || applyVars(base);
+      box.addEventListener('blur', ()=>{ state.followupEdits[key]=box.textContent; saveState(); });
+
+      c.appendChild(box);
+      right.appendChild(c);
+    });
+
+    row.appendChild(left); row.appendChild(right);
+    return row;
+  }
+
+  function refreshPanels(){
+    [...tabs.children].forEach(ch=> ch.classList.toggle('active', ch.textContent.toLowerCase()===activeTab));
+
+    panels.sms.innerHTML=''; panels.email.innerHTML=''; panels.vm.innerHTML='';
+    panels.sms.appendChild(buildScenarioRow('sms'));
+    panels.email.appendChild(buildScenarioRow('email'));
+    panels.vm.appendChild(buildScenarioRow('vm'));
+
+    Object.entries(panels).forEach(([k,p])=> p.classList.toggle('active', k===activeTab));
+  }
+  refreshPanels();
+
+  wrap.appendChild(panels.sms);
+  wrap.appendChild(panels.email);
+  wrap.appendChild(panels.vm);
+
+  const tools=document.createElement('div'); tools.className='row';
+  const copyAll=document.createElement('button'); copyAll.className='copybtn primary'; copyAll.textContent='Copy All Follow-ups';
+  copyAll.onclick=()=> copyText(buildAllFollowupsText(), 'Copied all follow-ups');
+  tools.appendChild(copyAll);
+  wrap.appendChild(tools);
+
+  return wrap;
+}
+
+function buildAllFollowupsText(){
+  let out = `Ooma Office — Follow-ups\\n\\n`;
+  SCENARIOS.forEach(sc=>{
+    out += `=== ${sc.label} ===\\n\\nSMS:\\n`;
+    VARIANTS.forEach(v=> out += `- ${v}: ${applyVars(state.followupEdits[`sms:${sc.id}:${v}`] || smsText(sc.id,v))}\\n`);
+    out += `\\nVOICEMAIL:\\n`;
+    VARIANTS.forEach(v=> out += `- ${v}: ${applyVars(state.followupEdits[`vm:${sc.id}:${v}`] || vmText(sc.id,v))}\\n`);
+    out += `\\nEMAIL:\\n`;
+    VARIANTS.forEach(v=>{
+      const t=emailTemplate(sc.id, v);
+      const subj = state.followupEdits[`email:${sc.id}:${v}:subject`] || applyVars(t.subject);
+      const body = state.followupEdits[`email:${sc.id}:${v}:body`] || applyVars(t.body);
+      out += `- ${v}:\\n  Subject: ${subj}\\n  ${body.replaceAll('\\n','\\n  ')}\\n\\n`;
+    });
+    out += `\\n`;
+  });
+  return out;
+}
+
+function section(title, subtitle, cards){ return { id: slug(title), title, subtitle, cards }; }
+function cardBlock(title, lines, badge='Copy, tweak, use'){ return { id: slug(title), type:'block', title, lines, badge, editKey:`card:${slug(title)}` }; }
+function cardTri(title, entries){ return { id: slug(title), type:'tri', title, lines: entries, badge:'Warm/Outbound/Aged inline', editKey:`card:${slug(title)}` }; }
+function line(k,v){ return {k, v}; }
+function objectionCard(title, ack, clarify, reframe, proof, close){
+  return cardBlock(title, [ line('Acknowledge',ack), line('Clarify',clarify), line('Reframe',reframe), line('Proof',proof), line('Close',close) ], 'Tight closer format');
+}
+function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+
+const toast = document.getElementById('toast');
+function showToast(msg){
+  toast.textContent = msg;
+  toast.style.display='block';
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=> toast.style.display='none', 1600);
+}
+async function copyText(txt, msg='Copied'){
+  try{ await navigator.clipboard.writeText(txt); showToast(msg); }
+  catch(e){
+    const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast(msg);
+  }
+}
+
+function loadState(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(raw){
+      const s=JSON.parse(raw);
+      return { fields:s.fields||{}, notes:s.notes||'', customEdits:s.customEdits||{}, followupEdits:s.followupEdits||{}, followupsTab:s.followupsTab||'sms', followupsScenario:s.followupsScenario||SCENARIOS[0].id };
+    }
+  }catch(e){}
+  return { fields:{}, notes:'', customEdits:{}, followupEdits:{}, followupsTab:'sms', followupsScenario:SCENARIOS[0].id };
+}
+function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+document.getElementById('toggleNotes').onclick=()=>{
+  const box=document.getElementById('notesBox');
+  box.style.display = (box.style.display==='none') ? 'block' : 'none';
+};
+
+const notesEl=document.getElementById('notes');
+notesEl.textContent = state.notes || '';
+notesEl.addEventListener('blur', ()=>{ state.notes=notesEl.textContent; saveState(); });
+
+document.getElementById('copyNotes').onclick=()=> copyText(notesEl.textContent||'', 'Copied notes');
+document.getElementById('resetAll').onclick=()=>{ if(!confirm('Reset fields + notes + edits?')) return; localStorage.removeItem(LS_KEY); location.reload(); };
+document.getElementById('copyKB').onclick=()=> copyText(JSON.stringify(VERIFIED_KB,null,2), 'Copied KB JSON');
+document.getElementById('copyAllSheet').onclick=()=>{
+  let out = `RICHARD — DAILY DRIVER (OOMA OFFICE)\\n\\n`;
+  SHEET.forEach(sec=>{
+    out += `=== ${sec.title} ===\\n`;
+    sec.cards.forEach(c=>{
+      out += `\\n${c.title}\\n`;
+      out += `${getCardPlainText(c)}\\n`;
+    });
+    out += `\\n\\n`;
+  });
+  out += `\\n${VERIFIED_KB.pricing_disclaimer}\\n`;
+  copyText(out, 'Copied one-sheet');
+};
+document.getElementById('copyAllFollowups').onclick=()=> copyText(buildAllFollowupsText(), 'Copied all follow-ups');
+
+</script>
+</body>
+</html>
